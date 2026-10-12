@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Outfit:wght@400;500;700&family=Caveat:wght@600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+<script src="confetti.js"></script>
 <style>
   /* Layout: one tall party "zine" printed in three riso inks on pink paper — sections stack like pages, each with one toy to play with. */
   :root {
@@ -279,7 +279,6 @@
     </button>
     <p class="cover-title" id="cover-title">Ada kejutan buat Zahra</p>
     <p class="cover-sub">ketuk kadonya buat buka 🎁</p>
-    <p class="cover-note">Nyalakan suara ya, ada lagunya ♪</p>
   </div>
 </div>
 <button id="music" aria-pressed="false" aria-label="Musik" hidden>♪</button>
@@ -450,9 +449,11 @@ document.querySelectorAll('[data-split]').forEach((line, li) => {
   });
 });
 
+// With reduced motion the party stays, just smaller.
 const burst = (opts = {}) => {
-  if (typeof confetti !== 'function' || reduceMotion) return;
-  confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#ff4f8b', '#0a9d97', '#ffc531', '#2b1d3a'], ...opts });
+  if (typeof confetti !== 'function') return;
+  const count = opts.particleCount ?? 120;
+  confetti({ spread: 80, origin: { y: 0.6 }, colors: ['#ff4f8b', '#0a9d97', '#ffc531', '#2b1d3a'], zIndex: 100, ...opts, particleCount: reduceMotion ? Math.ceil(count / 3) : count });
 };
 
 // ---------- balloons ----------
@@ -760,12 +761,21 @@ function openGift() {
   opened = true;
   startMusic();
   $('music').hidden = false;
+  // confetti bursts out of the gift right away…
+  const r = $('gift').getBoundingClientRect();
+  const giftAt = { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 3) / innerHeight };
+  burst({ particleCount: 140, spread: 70, startVelocity: 42, origin: giftAt });
+  setTimeout(() => {
+    burst({ particleCount: 80, angle: 60, spread: 60, origin: { x: 0, y: 0.75 } });
+    burst({ particleCount: 80, angle: 120, spread: 60, origin: { x: 1, y: 0.75 } });
+  }, 300);
   $('cover').classList.add('opening');
   document.body.classList.add('opened');
   setTimeout(() => {
     $('cover').classList.add('gone');
     document.documentElement.style.overflow = '';
-    burst({ particleCount: 160, spread: 100, origin: { y: 0.5 } });
+    // …and once more as the page appears.
+    burst({ particleCount: 160, spread: 110, origin: { y: 0.45 } });
   }, reduceMotion ? 0 : 650);
 }
 $('gift').addEventListener('click', openGift);
